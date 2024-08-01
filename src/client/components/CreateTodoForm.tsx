@@ -24,16 +24,23 @@ import { api } from '@/utils/client/api'
  */
 
 export const CreateTodoForm = () => {
-  const [todoBody, setTodoBody] = useState('')
+  const [todoBody, setTodoBody] = useState('');
 
-  const apiContext = api.useContext()
+  const apiContext = api.useContext();
 
   const { mutate: createTodo, isLoading: isCreatingTodo } =
     api.todo.create.useMutation({
       onSuccess: () => {
-        apiContext.todo.getAll.refetch()
+        apiContext.todo.getAll.refetch();
       },
-    })
+    });
+
+  const handleSubmit = () => {
+    createTodo({
+      body: todoBody,
+    });
+    setTodoBody('');
+  };
 
   return (
     <form className="group flex items-center justify-between rounded-12 border border-gray-200 py-2 pr-4 focus-within:border-gray-400">
@@ -49,18 +56,22 @@ export const CreateTodoForm = () => {
         onChange={(e) => {
           setTodoBody(e.target.value)
         }}
+        onKeyDown={(e) => {
+          if(e.key === 'Enter'){
+            e.preventDefault()
+
+            if(todoBody.length !== 0)
+              handleSubmit()
+          }
+        }}
         className="flex-1 px-4 text-base placeholder:text-gray-400 focus:outline-none"
       />
 
       <button
+        className="bg-gray-700 text-white hover:bg-blue-700 w-20 py-2 px-4 rounded-full"
         type="button"
         disabled={isCreatingTodo}
-        onClick={() => {
-          createTodo({
-            body: todoBody,
-          })
-          setTodoBody('')
-        }}
+        onClick={() => handleSubmit()}
       >
         Add
       </button>

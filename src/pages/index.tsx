@@ -1,4 +1,7 @@
+import * as Tabs from '@radix-ui/react-tabs'
+
 import { CreateTodoForm } from '@/client/components/CreateTodoForm'
+
 import { TodoList } from '@/client/components/TodoList'
 
 /**
@@ -24,9 +27,55 @@ const Index = () => {
           Todo App
         </h1>
 
-        <div className="pt-10">
-          <TodoList />
-        </div>
+        <Tabs.Root
+          className="flex flex-col mt-10"
+          defaultValue="tab1"
+        >
+          <Tabs.List className="flex" aria-label="Todo App">
+            <Tabs.Trigger
+              className="bg-white m-2 w-35 text-gray-700 border border-gray-200 py-2 px-4 rounded-full data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+              value="tab1"
+            >
+              All
+            </Tabs.Trigger>
+            <Tabs.Trigger
+              className="bg-white m-2 w-35 text-gray-700 border border-gray-200 py-2 px-4 rounded-full data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+              value="tab2"
+            >
+              Pending
+            </Tabs.Trigger>
+            <Tabs.Trigger
+              className="bg-white m-2 w-35 text-gray-700 border border-gray-200 py-2 px-4 rounded-full data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+              value="tab3"
+            >
+              Completed
+            </Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content
+            className="grow bg-white rounded-b-md"
+            value="tab1"
+          >
+            <div className="pt-10">
+              <TodoList />
+            </div>
+          </Tabs.Content>
+          <Tabs.Content
+            className="grow bg-white rounded-b-md"
+            value="tab2"
+          >
+            <div className="pt-10">
+              <TodoList status='completed' />
+            </div>
+          </Tabs.Content>
+          <Tabs.Content
+            className="grow bg-white rounded-b-md"
+            value="tab3"
+          >
+            <div className="pt-10">
+              <TodoList status='pending' />
+            </div>
+          </Tabs.Content>
+        </Tabs.Root>
 
         <div className="pt-10">
           <CreateTodoForm />

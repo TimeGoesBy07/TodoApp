@@ -1,8 +1,12 @@
 import type { SVGProps } from 'react'
 
+import { useState, useEffect } from 'react'
+
 import * as Checkbox from '@radix-ui/react-checkbox'
 
 import { api } from '@/utils/client/api'
+
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 
 /**
  * QUESTION 3:
@@ -63,17 +67,96 @@ import { api } from '@/utils/client/api'
  *  - https://auto-animate.formkit.com
  */
 
-export const TodoList = () => {
+interface TodoListProps {
+  status?: 'completed' | 'pending'
+};
+
+export const TodoList: React.FC<TodoListProps> = ({ status }) => {
+  const [isChecked, setChecked] = useState<Record<number, boolean>>({});
+  const [parent, enableAnimations] = useAutoAnimate();
+
+  const apiContext = api.useContext();
+
   const { data: todos = [] } = api.todo.getAll.useQuery({
     statuses: ['completed', 'pending'],
-  })
+  });
+
+  const { mutate: createUpdate, isLoading: isUpdating } = api.todoStatus.update.useMutation({
+    onSuccess: () => {
+      apiContext.todo.getAll.refetch();
+    },
+    onError: (error) => {
+      console.error('Error updating status:', error);
+    },
+  });
+
+  const { mutate: createDelete, isLoading: isDeleting } = api.todo.delete.useMutation({
+    onSuccess: () => {
+      apiContext.todo.getAll.refetch();
+    },
+    onError: (error: any) => {
+      console.error('Error deleting todo:', error);
+    },
+  });
+
+  const handleUpdate = (todoId: number, status: 'completed' | 'pending') => {
+    createUpdate({ todoId, status });
+  };
+
+  const handleDelete = (todoId: number) => {
+    createDelete({ id: todoId });
+  };
+
+  const handleCheckboxChange = (id: number) => {
+    const newChecked = !isChecked[id];
+
+    setChecked((prev: any) => {
+      return {
+        ...prev,
+        [id]: newChecked,
+      }
+    });
+
+    handleUpdate(id, newChecked ? 'completed' : 'pending');
+  };
+
+  useEffect(() => {
+    const initialCheckedState: Record<number, boolean> = {};
+
+    todos.forEach(todo => {
+      initialCheckedState[todo.id] = todo.status === 'completed';
+    });
+
+    setChecked(prevState => {
+      const needsUpdate = Object.keys(initialCheckedState).some((key: any) => initialCheckedState[key] !== prevState[key]);
+
+      if (needsUpdate) {
+        return initialCheckedState;
+      }
+
+      return prevState;
+    })
+
+  }, [todos]);
+
+  let filteredTodos;
+
+  if (status) {
+    filteredTodos = todos.filter(todo => todo.status === status);
+  }
+  else {
+    filteredTodos = todos;
+  }
+
 
   return (
-    <ul className="grid grid-cols-1 gap-y-3">
-      {todos.map((todo) => (
+    <ul className="grid grid-cols-1 gap-y-3" ref={parent}>
+      {filteredTodos.map((todo) => (
         <li key={todo.id}>
-          <div className="flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
+          <div className={`flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm ${isChecked[todo.id] && 'bg-gray-100'}`}>
             <Checkbox.Root
+              defaultChecked={todo.status === 'completed' ? true : false}
+              onCheckedChange={() => handleCheckboxChange(todo.id)}
               id={String(todo.id)}
               className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
             >
@@ -82,9 +165,17 @@ export const TodoList = () => {
               </Checkbox.Indicator>
             </Checkbox.Root>
 
-            <label className="block pl-3 font-medium" htmlFor={String(todo.id)}>
+            <label className={`block pl-3 font-medium ${isChecked[todo.id] ? 'text-gray-500 line-through' : 'text-black'}`} htmlFor={String(todo.id)}>
               {todo.body}
             </label>
+
+            <button
+              onClick={() => handleDelete(todo.id)}
+              aria-label="Delete todo" // Descriptive label for screen readers
+              className="ml-auto p-0 bg-transparent border-0 cursor-pointer"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
           </div>
         </li>
       ))}
